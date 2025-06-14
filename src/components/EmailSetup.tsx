@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +27,7 @@ const dnsRecords = [
 
 const EmailSetup = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [highestStepReached, setHighestStepReached] = useState(1);
   const [domainName, setDomainName] = useState('');
   const [senderName, setSenderName] = useState('');
   const [fromEmail, setFromEmail] = useState('');
@@ -90,11 +90,21 @@ const EmailSetup = () => {
       toast.error(errorMessage);
       return;
     }
-    setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+    const nextStep = Math.min(currentStep + 1, steps.length);
+    setCurrentStep(nextStep);
+    setHighestStepReached((prev) => Math.max(prev, nextStep));
   };
 
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
   
+  const handleStepClick = (stepId: number) => {
+    if (stepId <= highestStepReached) {
+        setCurrentStep(stepId);
+    } else {
+        toast.info("Please complete the previous steps to proceed.");
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard!");
@@ -379,7 +389,7 @@ const EmailSetup = () => {
                 >
                   {testEmailSent ? (
                     <>
-                      <Icon name="CheckCircle2" className="mr-2 h-4 w-4" />
+                      <Icon name="CheckCircle" className="mr-2 h-4 w-4" />
                       Test Email Sent Successfully
                     </>
                   ) : (
@@ -408,7 +418,7 @@ const EmailSetup = () => {
             <div className="text-center py-12">
                 <div className="mb-6">
                   <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon name="CheckCircle2" className="h-10 w-10 text-green-600" />
+                    <Icon name="CheckCircle" className="h-10 w-10 text-green-600" />
                   </div>
                   <h3 className="font-semibold text-3xl text-green-900">Setup Complete!</h3>
                   <p className="text-muted-foreground mt-3 text-lg max-w-md mx-auto">
@@ -446,17 +456,30 @@ const EmailSetup = () => {
           <CardTitle>Email Domain Setup</CardTitle>
           <CardDescription>Follow the steps to authenticate your domain and start sending emails.</CardDescription>
           <div className="flex items-center gap-2 pt-4 overflow-x-auto pb-4">
-            {steps.map((step, index) => (
-              <React.Fragment key={step.id}>
-                <div className="flex flex-col items-center min-w-[6rem]">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep >= step.id ? 'bg-primary border-primary text-white' : 'bg-slate-100'}`}>
-                    {currentStep > step.id ? <Icon name="Check" size={16} /> : step.id}
-                  </div>
-                  <p className={`text-xs mt-1 text-center ${currentStep >= step.id ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>{step.name}</p>
-                </div>
-                {index < steps.length - 1 && <div className={`flex-1 h-0.5 ${currentStep > step.id ? 'bg-primary' : 'bg-slate-200'}`} />}
-              </React.Fragment>
-            ))}
+            {steps.map((step, index) => {
+                const isCompleted = step.id < highestStepReached;
+                const isActive = step.id === currentStep;
+                const isReachable = step.id <= highestStepReached;
+
+                return (
+                  <React.Fragment key={step.id}>
+                    <div 
+                      className={`flex flex-col items-center min-w-[6rem] ${isReachable ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                      onClick={() => handleStepClick(step.id)}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 
+                        ${isActive ? 'bg-primary border-primary text-white' :
+                          isCompleted ? 'border-primary text-primary' : 'bg-slate-100'
+                        }`}
+                      >
+                        {isCompleted ? <Icon name="Check" size={16} /> : step.id}
+                      </div>
+                      <p className={`text-xs mt-1 text-center ${isActive ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>{step.name}</p>
+                    </div>
+                    {index < steps.length - 1 && <div className={`flex-1 h-0.5 ${isCompleted ? 'bg-primary' : 'bg-slate-200'}`} />}
+                  </React.Fragment>
+                )
+            })}
           </div>
         </CardHeader>
         <CardContent>
