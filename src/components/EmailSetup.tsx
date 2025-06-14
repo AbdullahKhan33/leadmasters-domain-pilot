@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import Icon from './Icon';
 import DomainStatus from './DomainStatus';
 import EmailPreview from './EmailPreview';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const steps = [
   { id: 1, name: "Domain Name" },
