@@ -6,8 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
-import AppSidebar from "./components/AppSidebar";
+import AppHeader from "./components/AppHeader";
 
 const queryClient = new QueryClient();
 
@@ -17,18 +16,17 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <SidebarProvider>
-          <div className="min-h-screen flex w-full bg-slate-50">
-            <AppSidebar />
-            <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-              <SidebarTrigger className="mb-4" />
+        <div className="relative flex min-h-screen flex-col bg-background">
+          <AppHeader />
+          <main className="flex-1">
+            <div className="container relative py-4 sm:py-6 lg:py-8">
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </main>
-          </div>
-        </SidebarProvider>
+            </div>
+          </main>
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

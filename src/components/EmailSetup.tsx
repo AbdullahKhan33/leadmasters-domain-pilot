@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,6 +90,9 @@ const EmailSetup = () => {
             <Button onClick={handleDnsCheck} className="mt-4" disabled={verificationStatus === 'verifying'}>
               {verificationStatus === 'verifying' ? <Icon name="Loader" className="animate-spin mr-2"/> : null} Check DNS
             </Button>
+            <div className="mt-6">
+                <DomainStatus status={verificationStatus} domain={domainName} />
+            </div>
           </div>
         );
       case 3:
@@ -143,6 +145,17 @@ const EmailSetup = () => {
                   <Textarea id="footer" value={unsubscribeFooter} onChange={e => setUnsubscribeFooter(e.target.value)} placeholder="Your Company Inc. 123 Street, City" />
                 </div>
               </div>
+               <div className="mt-6">
+                <EmailPreview 
+                    senderName={senderName}
+                    fromEmail={fromEmail}
+                    logoUrl={logo}
+                    accentColor={accentColor}
+                    subject="This is a preview of your email"
+                    body="This is a preview of how your emails will look with your branding."
+                    footer={unsubscribeFooter}
+                />
+              </div>
             </div>
         );
       case 5:
@@ -161,6 +174,17 @@ const EmailSetup = () => {
                 </div>
                 <Button onClick={() => toast.success("Test email sent!", {description: "Check your inbox for the test email."})}><Icon name="Send" className="mr-2 h-4 w-4" /> Send Test Email</Button>
               </div>
+              <div className="mt-6">
+                <EmailPreview 
+                    senderName={senderName}
+                    fromEmail={fromEmail}
+                    logoUrl={logo}
+                    accentColor={accentColor}
+                    subject={testSubject}
+                    body={testBody}
+                    footer={unsubscribeFooter}
+                />
+              </div>
             </div>
         );
       case 6:
@@ -177,61 +201,45 @@ const EmailSetup = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-      {/* Left Column */}
-      <div className="lg:col-span-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Email Domain Setup</CardTitle>
-            <CardDescription>Follow the steps to authenticate your domain and start sending emails.</CardDescription>
-            <div className="flex items-center gap-2 pt-4">
-              {steps.map((step, index) => (
-                <React.Fragment key={step.id}>
-                  <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep >= step.id ? 'bg-primary border-primary text-white' : 'bg-slate-100'}`}>
-                      {currentStep > step.id ? <Icon name="Check" size={16} /> : step.id}
-                    </div>
-                    <p className={`text-xs mt-1 ${currentStep >= step.id ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>{step.name}</p>
+    <div className="grid grid-cols-1 gap-8 items-start">
+      <Card>
+        <CardHeader>
+          <CardTitle>Email Domain Setup</CardTitle>
+          <CardDescription>Follow the steps to authenticate your domain and start sending emails.</CardDescription>
+          <div className="flex items-center gap-2 pt-4 overflow-x-auto pb-4">
+            {steps.map((step, index) => (
+              <React.Fragment key={step.id}>
+                <div className="flex flex-col items-center min-w-[6rem]">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep >= step.id ? 'bg-primary border-primary text-white' : 'bg-slate-100'}`}>
+                    {currentStep > step.id ? <Icon name="Check" size={16} /> : step.id}
                   </div>
-                  {index < steps.length - 1 && <div className={`flex-1 h-0.5 ${currentStep > step.id ? 'bg-primary' : 'bg-slate-200'}`} />}
-                </React.Fragment>
-              ))}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {renderStep()}
-            <div className="mt-8 flex justify-between">
-              {currentStep > 1 && currentStep < steps.length && (
-                <Button variant="outline" onClick={handleBack}>Back</Button>
-              )}
-              {currentStep < steps.length - 1 && (
-                <Button onClick={handleNext}>Next <Icon name="ArrowRight" className="ml-2 h-4 w-4"/></Button>
-              )}
-               {currentStep === steps.length - 1 && (
-                <Button onClick={handleNext} disabled={verificationStatus !== 'verified'}>
-                    Finish Setup
-                </Button>
-              )}
-              {currentStep === steps.length && (
-                <Button className="w-full">Create First Campaign</Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      {/* Right Column */}
-      <div className="lg:col-span-1 space-y-6 sticky top-8">
-        <DomainStatus status={verificationStatus} domain={domainName} />
-        <EmailPreview 
-            senderName={senderName}
-            fromEmail={fromEmail}
-            logoUrl={logo}
-            accentColor={accentColor}
-            subject={testSubject}
-            body={testBody}
-            footer={unsubscribeFooter}
-        />
-      </div>
+                  <p className={`text-xs mt-1 text-center ${currentStep >= step.id ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>{step.name}</p>
+                </div>
+                {index < steps.length - 1 && <div className={`flex-1 h-0.5 ${currentStep > step.id ? 'bg-primary' : 'bg-slate-200'}`} />}
+              </React.Fragment>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {renderStep()}
+          <div className="mt-8 flex justify-between">
+            {currentStep > 1 && currentStep < steps.length && (
+              <Button variant="outline" onClick={handleBack}>Back</Button>
+            )}
+            {currentStep < steps.length && currentStep !== steps.length -1 && (
+              <Button onClick={handleNext}>Next <Icon name="ArrowRight" className="ml-2 h-4 w-4"/></Button>
+            )}
+             {currentStep === steps.length - 1 && (
+              <Button onClick={handleNext} disabled={verificationStatus !== 'verified'}>
+                  Finish Setup
+              </Button>
+            )}
+            {currentStep === steps.length && (
+              <Button className="w-full">Create First Campaign</Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
