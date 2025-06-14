@@ -379,7 +379,7 @@ const EmailSetup = () => {
                 >
                   {testEmailSent ? (
                     <>
-                      <Icon name="CheckCircle" className="mr-2 h-4 w-4" />
+                      <Icon name="CheckCircle2" className="mr-2 h-4 w-4" />
                       Test Email Sent Successfully
                     </>
                   ) : (
@@ -408,7 +408,7 @@ const EmailSetup = () => {
             <div className="text-center py-12">
                 <div className="mb-6">
                   <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon name="CheckCircle" className="h-10 w-10 text-green-600" />
+                    <Icon name="CheckCircle2" className="h-10 w-10 text-green-600" />
                   </div>
                   <h3 className="font-semibold text-3xl text-green-900">Setup Complete!</h3>
                   <p className="text-muted-foreground mt-3 text-lg max-w-md mx-auto">
