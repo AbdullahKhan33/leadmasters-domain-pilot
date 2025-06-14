@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,17 +28,71 @@ const dnsRecords = [
 
 const EmailSetup = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [domainName, setDomainName] = useState('newsletter.clientdomain.com');
-  const [senderName, setSenderName] = useState('Your Name');
-  const [fromEmail, setFromEmail] = useState('newsletter@clientdomain.com');
+  const [domainName, setDomainName] = useState('');
+  const [senderName, setSenderName] = useState('');
+  const [fromEmail, setFromEmail] = useState('');
   const [logo, setLogo] = useState<string | undefined>(undefined);
   const [accentColor, setAccentColor] = useState('#8B5CF6');
-  const [unsubscribeFooter, setUnsubscribeFooter] = useState('123 Main St, Anytown, USA');
-  const [testSubject, setTestSubject] = useState('This is a test email');
-  const [testBody, setTestBody] = useState('Hello! This email confirms your domain is set up correctly.');
+  const [unsubscribeFooter, setUnsubscribeFooter] = useState('');
+  const [testSubject, setTestSubject] = useState('Test Email from Your Domain');
+  const [testBody, setTestBody] = useState('This is a test email to verify that your domain authentication is working correctly. If you received this email, your setup is complete!');
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'verified' | 'failed'>('idle');
+  const [testEmailSent, setTestEmailSent] = useState(false);
 
-  const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+  // Validation functions
+  const validateDomain = (domain: string) => {
+    const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/;
+    return domainRegex.test(domain);
+  };
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const canProceedToNextStep = () => {
+    switch (currentStep) {
+      case 1:
+        return domainName && validateDomain(domainName);
+      case 2:
+        return verificationStatus === 'verified';
+      case 3:
+        return senderName && fromEmail && validateEmail(fromEmail);
+      case 4:
+        return senderName && fromEmail && unsubscribeFooter;
+      case 5:
+        return testSubject && testBody && testEmailSent;
+      default:
+        return true;
+    }
+  };
+
+  const handleNext = () => {
+    if (!canProceedToNextStep()) {
+      let errorMessage = '';
+      switch (currentStep) {
+        case 1:
+          errorMessage = 'Please enter a valid domain name';
+          break;
+        case 2:
+          errorMessage = 'Please verify your DNS records first';
+          break;
+        case 3:
+          errorMessage = 'Please fill in all sender profile fields with valid information';
+          break;
+        case 4:
+          errorMessage = 'Please complete all branding fields';
+          break;
+        case 5:
+          errorMessage = 'Please send a test email first';
+          break;
+      }
+      toast.error(errorMessage);
+      return;
+    }
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+  };
+
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
   
   const copyToClipboard = (text: string) => {
@@ -46,18 +101,42 @@ const EmailSetup = () => {
   };
 
   const handleDnsCheck = () => {
+    if (!domainName) {
+      toast.error("Please enter a domain name first");
+      return;
+    }
+    
     setVerificationStatus('verifying');
     toast.info("Checking DNS records...");
+    
+    // Update DNS records to use the actual domain
+    const updatedRecords = dnsRecords.map(record => ({
+      ...record,
+      host: record.host.replace('newsletter.clientdomain.com', domainName).replace('newsletter', domainName.split('.')[0])
+    }));
+    
     setTimeout(() => {
-        const success = Math.random() > 0.3; // Simulate API call
+        const success = Math.random() > 0.2; // Higher success rate for demo
         if (success) {
             setVerificationStatus('verified');
-            toast.success("Domain verified successfully!");
+            toast.success("Domain verified successfully! You can now proceed to the next step.");
         } else {
             setVerificationStatus('failed');
-            toast.error("DNS verification failed. Please check your records.");
+            toast.error("DNS verification failed. Please check your records and try again.");
         }
-    }, 2000);
+    }, 3000);
+  };
+
+  const handleTestEmail = () => {
+    if (!testSubject || !testBody) {
+      toast.error("Please fill in both subject and body");
+      return;
+    }
+    
+    setTestEmailSent(true);
+    toast.success("Test email sent successfully!", {
+      description: "Check your inbox for the test email. You can now finish the setup."
+    });
   };
 
   const renderStep = () => {
@@ -66,32 +145,88 @@ const EmailSetup = () => {
         return (
           <div>
             <h3 className="font-semibold text-lg">Enter your sending domain</h3>
-            <p className="text-muted-foreground text-sm mb-4">We'll help you authenticate this domain for email.</p>
-            <Label htmlFor="domain">Domain Name</Label>
-            <Input id="domain" value={domainName} onChange={(e) => setDomainName(e.target.value)} placeholder="newsletter.yourbrand.com" />
+            <p className="text-muted-foreground text-sm mb-4">We'll help you authenticate this domain for email sending. This should be a subdomain like newsletter.yourdomain.com</p>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="domain">Domain Name *</Label>
+                <Input 
+                  id="domain" 
+                  value={domainName} 
+                  onChange={(e) => setDomainName(e.target.value)} 
+                  placeholder="newsletter.yourbrand.com"
+                  className={!validateDomain(domainName) && domainName ? "border-red-500" : ""}
+                />
+                {domainName && !validateDomain(domainName) && (
+                  <p className="text-sm text-red-500 mt-1">Please enter a valid domain name</p>
+                )}
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900">💡 Domain Setup Tips:</h4>
+                <ul className="text-sm text-blue-800 mt-2 space-y-1">
+                  <li>• Use a subdomain like newsletter.yourbrand.com or mail.yourbrand.com</li>
+                  <li>• Don't use your main domain (yourbrand.com) for email sending</li>
+                  <li>• The subdomain should point to your domain registrar</li>
+                </ul>
+              </div>
+            </div>
           </div>
         );
       case 2:
+        const updatedRecords = dnsRecords.map(record => ({
+          ...record,
+          host: record.host.replace('newsletter.clientdomain.com', domainName || 'newsletter.yourdomain.com').replace('newsletter', (domainName || 'newsletter.yourdomain.com').split('.')[0])
+        }));
+        
         return (
           <div>
             <h3 className="font-semibold text-lg">Add DNS Records</h3>
-            <p className="text-muted-foreground text-sm mb-4">Add these records to your domain provider to verify your domain.</p>
+            <p className="text-muted-foreground text-sm mb-4">Add these records to your domain provider to verify your domain. This usually takes 5-10 minutes to propagate.</p>
             <div className="space-y-4">
-              {dnsRecords.map(record => (
-                <div key={record.type} className="p-3 bg-slate-50 rounded-md border">
-                  <p className="font-semibold">{record.type} Record</p>
-                  <div className="text-sm space-y-2 mt-2">
-                    <p><strong>Host:</strong> <code className="bg-slate-200 p-1 rounded text-xs">{record.host}</code><Button variant="ghost" size="sm" className="ml-2" onClick={() => copyToClipboard(record.host)}><Icon name="Copy" className="h-3 w-3"/></Button></p>
-                    <p><strong>Value:</strong> <code className="bg-slate-200 p-1 rounded text-xs truncate inline-block max-w-xs">{record.value}</code><Button variant="ghost" size="sm" className="ml-2" onClick={() => copyToClipboard(record.value)}><Icon name="Copy" className="h-3 w-3"/></Button></p>
+              {updatedRecords.map(record => (
+                <div key={record.type} className="p-4 bg-slate-50 rounded-lg border">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="font-semibold text-slate-900">{record.type} Record</p>
+                      <div className="text-sm space-y-2 mt-2">
+                        <div>
+                          <p className="text-slate-600"><strong>Host/Name:</strong></p>
+                          <div className="flex items-center gap-2">
+                            <code className="bg-slate-200 p-2 rounded text-xs font-mono flex-1">{record.host}</code>
+                            <Button variant="ghost" size="sm" onClick={() => copyToClipboard(record.host)}>
+                              <Icon name="Copy" className="h-3 w-3"/>
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-slate-600"><strong>Value:</strong></p>
+                          <div className="flex items-center gap-2">
+                            <code className="bg-slate-200 p-2 rounded text-xs font-mono flex-1 break-all">{record.value}</code>
+                            <Button variant="ghost" size="sm" onClick={() => copyToClipboard(record.value)}>
+                              <Icon name="Copy" className="h-3 w-3"/>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-            <Button onClick={handleDnsCheck} className="mt-4" disabled={verificationStatus === 'verifying'}>
-              {verificationStatus === 'verifying' ? <Icon name="Loader" className="animate-spin mr-2"/> : null} Check DNS
-            </Button>
-            <div className="mt-6">
-                <DomainStatus status={verificationStatus} domain={domainName} />
+            <div className="mt-6 space-y-4">
+              <Button onClick={handleDnsCheck} disabled={verificationStatus === 'verifying'} className="w-full">
+                {verificationStatus === 'verifying' ? (
+                  <>
+                    <Icon name="Loader" className="animate-spin mr-2 h-4 w-4"/> 
+                    Checking DNS Records...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="Search" className="mr-2 h-4 w-4"/>
+                    Verify DNS Records
+                  </>
+                )}
+              </Button>
+              <DomainStatus status={verificationStatus} domain={domainName} />
             </div>
           </div>
         );
@@ -99,15 +234,37 @@ const EmailSetup = () => {
         return (
           <div>
             <h3 className="font-semibold text-lg">Setup Sender Profile</h3>
-            <p className="text-muted-foreground text-sm mb-4">This is who your emails will come from.</p>
+            <p className="text-muted-foreground text-sm mb-4">Configure who your emails will come from. This information will be visible to recipients.</p>
             <div className="space-y-4">
                 <div>
-                    <Label htmlFor="senderName">Sender Name</Label>
-                    <Input id="senderName" value={senderName} onChange={e => setSenderName(e.target.value)} placeholder="Your Company" />
+                    <Label htmlFor="senderName">Sender Name *</Label>
+                    <Input 
+                      id="senderName" 
+                      value={senderName} 
+                      onChange={e => setSenderName(e.target.value)} 
+                      placeholder="Your Company Name" 
+                    />
                 </div>
                 <div>
-                    <Label htmlFor="fromEmail">Default 'From' Email</Label>
-                    <Input id="fromEmail" value={fromEmail} onChange={e => setFromEmail(e.target.value)} placeholder="hello@yourbrand.com" />
+                    <Label htmlFor="fromEmail">Default 'From' Email *</Label>
+                    <Input 
+                      id="fromEmail" 
+                      value={fromEmail} 
+                      onChange={e => setFromEmail(e.target.value)} 
+                      placeholder="hello@yourbrand.com"
+                      className={fromEmail && !validateEmail(fromEmail) ? "border-red-500" : ""}
+                    />
+                    {fromEmail && !validateEmail(fromEmail) && (
+                      <p className="text-sm text-red-500 mt-1">Please enter a valid email address</p>
+                    )}
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-yellow-900">📧 Email Best Practices:</h4>
+                  <ul className="text-sm text-yellow-800 mt-2 space-y-1">
+                    <li>• Use a professional sender name that recipients will recognize</li>
+                    <li>• The 'from' email should match your verified domain</li>
+                    <li>• Avoid using 'noreply' addresses for better engagement</li>
+                  </ul>
                 </div>
             </div>
           </div>
@@ -116,44 +273,76 @@ const EmailSetup = () => {
         return (
             <div>
               <h3 className="font-semibold text-lg">Customize Your Branding</h3>
-              <p className="text-muted-foreground text-sm mb-4">Add your logo and brand color for emails.</p>
-              <div className="space-y-4">
+              <p className="text-muted-foreground text-sm mb-4">Add your logo and brand colors to make emails look professional and on-brand.</p>
+              <div className="space-y-6">
                 <div>
-                    <Label>Logo</Label>
-                    <div className="flex items-center gap-4">
-                        <Avatar>
+                    <Label>Company Logo</Label>
+                    <div className="flex items-center gap-4 mt-2">
+                        <Avatar className="w-16 h-16">
                             <AvatarImage src={logo} />
-                            <AvatarFallback><Icon name="Image" /></AvatarFallback>
+                            <AvatarFallback className="text-lg"><Icon name="Image" /></AvatarFallback>
                         </Avatar>
-                        <Input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                                setLogo(URL.createObjectURL(e.target.files[0]));
-                            }
-                        }} />
-                        <Button asChild variant="outline"><Label htmlFor="logo-upload" className="cursor-pointer">Upload Logo</Label></Button>
+                        <div>
+                          <Input 
+                            id="logo-upload" 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                    setLogo(URL.createObjectURL(e.target.files[0]));
+                                }
+                            }} 
+                          />
+                          <Button asChild variant="outline">
+                            <Label htmlFor="logo-upload" className="cursor-pointer">
+                              <Icon name="Upload" className="mr-2 h-4 w-4"/>
+                              Upload Logo
+                            </Label>
+                          </Button>
+                          <p className="text-xs text-muted-foreground mt-1">Recommended: 200x200px, PNG or JPG</p>
+                        </div>
                     </div>
                 </div>
                 <div>
-                  <Label htmlFor="accentColor">Accent Color</Label>
-                  <div className="flex items-center gap-2">
-                    <Input id="accentColor" type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} className="w-12 h-10 p-1" />
-                    <Input value={accentColor} onChange={e => setAccentColor(e.target.value)} />
+                  <Label htmlFor="accentColor">Brand Color</Label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <Input 
+                      id="accentColor" 
+                      type="color" 
+                      value={accentColor} 
+                      onChange={e => setAccentColor(e.target.value)} 
+                      className="w-16 h-10 p-1 rounded cursor-pointer" 
+                    />
+                    <Input 
+                      value={accentColor} 
+                      onChange={e => setAccentColor(e.target.value)} 
+                      placeholder="#8B5CF6"
+                      className="font-mono"
+                    />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="footer">Unsubscribe Footer</Label>
-                  <Textarea id="footer" value={unsubscribeFooter} onChange={e => setUnsubscribeFooter(e.target.value)} placeholder="Your Company Inc. 123 Street, City" />
+                  <Label htmlFor="footer">Unsubscribe Footer *</Label>
+                  <Textarea 
+                    id="footer" 
+                    value={unsubscribeFooter} 
+                    onChange={e => setUnsubscribeFooter(e.target.value)} 
+                    placeholder="Your Company Inc.&#10;123 Business Street&#10;City, State 12345&#10;United States"
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Required by law. Include your company name and physical address.</p>
                 </div>
               </div>
                <div className="mt-6">
                 <EmailPreview 
-                    senderName={senderName}
-                    fromEmail={fromEmail}
+                    senderName={senderName || "Your Company"}
+                    fromEmail={fromEmail || "hello@yourbrand.com"}
                     logoUrl={logo}
                     accentColor={accentColor}
-                    subject="This is a preview of your email"
-                    body="This is a preview of how your emails will look with your branding."
-                    footer={unsubscribeFooter}
+                    subject="Welcome to our newsletter!"
+                    body="This is a preview of how your emails will look with your custom branding. Your logo, colors, and footer will appear consistently across all your email campaigns."
+                    footer={unsubscribeFooter || "Your Company Inc., 123 Business Street, City, State 12345"}
                 />
               </div>
             </div>
@@ -162,17 +351,44 @@ const EmailSetup = () => {
         return (
             <div>
               <h3 className="font-semibold text-lg">Send a Test Email</h3>
-              <p className="text-muted-foreground text-sm mb-4">Make sure everything looks perfect before sending to your list.</p>
+              <p className="text-muted-foreground text-sm mb-4">Send yourself a test email to make sure everything is working correctly before going live.</p>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="testSubject">Subject</Label>
-                  <Input id="testSubject" value={testSubject} onChange={e => setTestSubject(e.target.value)} />
+                  <Label htmlFor="testSubject">Subject Line *</Label>
+                  <Input 
+                    id="testSubject" 
+                    value={testSubject} 
+                    onChange={e => setTestSubject(e.target.value)}
+                    placeholder="Test Email Subject"
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="testBody">Body</Label>
-                  <Textarea id="testBody" value={testBody} onChange={e => setTestBody(e.target.value)} />
+                  <Label htmlFor="testBody">Email Body *</Label>
+                  <Textarea 
+                    id="testBody" 
+                    value={testBody} 
+                    onChange={e => setTestBody(e.target.value)}
+                    rows={6}
+                    placeholder="Write your test email content here..."
+                  />
                 </div>
-                <Button onClick={() => toast.success("Test email sent!", {description: "Check your inbox for the test email."})}><Icon name="Send" className="mr-2 h-4 w-4" /> Send Test Email</Button>
+                <Button 
+                  onClick={handleTestEmail} 
+                  disabled={!testSubject || !testBody || testEmailSent}
+                  className="w-full"
+                >
+                  {testEmailSent ? (
+                    <>
+                      <Icon name="CheckCircle" className="mr-2 h-4 w-4" />
+                      Test Email Sent Successfully
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="Send" className="mr-2 h-4 w-4" />
+                      Send Test Email
+                    </>
+                  )}
+                </Button>
               </div>
               <div className="mt-6">
                 <EmailPreview 
@@ -189,10 +405,33 @@ const EmailSetup = () => {
         );
       case 6:
         return (
-            <div className="text-center py-8">
-                <Icon name="PartyPopper" className="h-16 w-16 text-primary mx-auto mb-4" />
-                <h3 className="font-semibold text-2xl">Setup Complete!</h3>
-                <p className="text-muted-foreground mt-2">You're ready to launch your first campaign!</p>
+            <div className="text-center py-12">
+                <div className="mb-6">
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon name="CheckCircle" className="h-10 w-10 text-green-600" />
+                  </div>
+                  <h3 className="font-semibold text-3xl text-green-900">Setup Complete!</h3>
+                  <p className="text-muted-foreground mt-3 text-lg max-w-md mx-auto">
+                    Your email domain is verified and configured. You're ready to start sending professional emails!
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 text-left">
+                  <div className="p-4 border rounded-lg">
+                    <Icon name="Shield" className="h-8 w-8 text-blue-600 mb-2"/>
+                    <h4 className="font-medium">Domain Verified</h4>
+                    <p className="text-sm text-muted-foreground">Your DNS records are properly configured</p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <Icon name="User" className="h-8 w-8 text-green-600 mb-2"/>
+                    <h4 className="font-medium">Sender Profile Ready</h4>
+                    <p className="text-sm text-muted-foreground">Your from name and email are set up</p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <Icon name="Palette" className="h-8 w-8 text-purple-600 mb-2"/>
+                    <h4 className="font-medium">Branding Applied</h4>
+                    <p className="text-sm text-muted-foreground">Your emails will look professional</p>
+                  </div>
+                </div>
             </div>
         );
       default:
@@ -224,18 +463,26 @@ const EmailSetup = () => {
           {renderStep()}
           <div className="mt-8 flex justify-between">
             {currentStep > 1 && currentStep < steps.length && (
-              <Button variant="outline" onClick={handleBack}>Back</Button>
+              <Button variant="outline" onClick={handleBack}>
+                <Icon name="ArrowLeft" className="mr-2 h-4 w-4"/>
+                Back
+              </Button>
             )}
-            {currentStep < steps.length && currentStep !== steps.length -1 && (
-              <Button onClick={handleNext}>Next <Icon name="ArrowRight" className="ml-2 h-4 w-4"/></Button>
-            )}
-             {currentStep === steps.length - 1 && (
-              <Button onClick={handleNext} disabled={verificationStatus !== 'verified'}>
-                  Finish Setup
+            {currentStep < steps.length && currentStep !== steps.length && (
+              <Button 
+                onClick={handleNext} 
+                disabled={!canProceedToNextStep()}
+                className="ml-auto"
+              >
+                {currentStep === steps.length - 1 ? 'Finish Setup' : 'Next'}
+                <Icon name="ArrowRight" className="ml-2 h-4 w-4"/>
               </Button>
             )}
             {currentStep === steps.length && (
-              <Button className="w-full">Create First Campaign</Button>
+              <Button className="w-full" size="lg">
+                <Icon name="Plus" className="mr-2 h-4 w-4"/>
+                Create Your First Campaign
+              </Button>
             )}
           </div>
         </CardContent>
