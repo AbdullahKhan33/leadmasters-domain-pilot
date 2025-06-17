@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,10 +14,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 const steps = [
   { id: 1, name: "Domain Name" },
   { id: 2, name: "DNS Records" },
-  { id: 3, name: "Sender Profile" },
-  { id: 4, name: "Branding" },
-  { id: 5, name: "Test Email" },
-  { id: 6, name: "Finish" },
+  { id: 3, name: "Setup & Test" },
+  { id: 4, name: "Finish" },
 ];
 
 const dnsRecords = [
@@ -57,11 +56,7 @@ const EmailSetup = () => {
       case 2:
         return verificationStatus === 'verified';
       case 3:
-        return senderName && fromEmail && validateEmail(fromEmail);
-      case 4:
-        return senderName && fromEmail && unsubscribeFooter;
-      case 5:
-        return testSubject && testBody && testEmailSent;
+        return senderName && fromEmail && validateEmail(fromEmail) && unsubscribeFooter && testEmailSent;
       default:
         return true;
     }
@@ -78,13 +73,7 @@ const EmailSetup = () => {
           errorMessage = 'Please verify your DNS records first';
           break;
         case 3:
-          errorMessage = 'Please fill in all sender profile fields with valid information';
-          break;
-        case 4:
-          errorMessage = 'Please complete all branding fields';
-          break;
-        case 5:
-          errorMessage = 'Please send a test email first';
+          errorMessage = 'Please complete all fields and send a test email';
           break;
       }
       toast.error(errorMessage);
@@ -242,77 +231,69 @@ const EmailSetup = () => {
         );
       case 3:
         return (
-          <div>
-            <h3 className="font-semibold text-lg">Setup Sender Profile</h3>
-            <p className="text-muted-foreground text-sm mb-4">Configure who your emails will come from. This information will be visible to recipients.</p>
-            <div className="space-y-4">
-                <div>
-                    <Label htmlFor="senderName">Sender Name *</Label>
-                    <Input 
-                      id="senderName" 
-                      value={senderName} 
-                      onChange={e => setSenderName(e.target.value)} 
-                      placeholder="Your Company Name" 
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="fromEmail">Default 'From' Email *</Label>
-                    <Input 
-                      id="fromEmail" 
-                      value={fromEmail} 
-                      onChange={e => setFromEmail(e.target.value)} 
-                      placeholder="hello@yourbrand.com"
-                      className={fromEmail && !validateEmail(fromEmail) ? "border-red-500" : ""}
-                    />
-                    {fromEmail && !validateEmail(fromEmail) && (
-                      <p className="text-sm text-red-500 mt-1">Please enter a valid email address</p>
-                    )}
-                </div>
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-yellow-900">📧 Email Best Practices:</h4>
-                  <ul className="text-sm text-yellow-800 mt-2 space-y-1">
-                    <li>• Use a professional sender name that recipients will recognize</li>
-                    <li>• The 'from' email should match your verified domain</li>
-                    <li>• Avoid using 'noreply' addresses for better engagement</li>
-                  </ul>
-                </div>
-            </div>
-          </div>
-        );
-      case 4:
-        return (
+          <div className="space-y-8">
+            {/* Sender Profile Section */}
             <div>
-              <h3 className="font-semibold text-lg">Customize Your Branding</h3>
-              <p className="text-muted-foreground text-sm mb-4">Add your logo and brand colors to make emails look professional and on-brand.</p>
-              <div className="space-y-6">
+              <h3 className="font-semibold text-lg">Sender Profile</h3>
+              <p className="text-muted-foreground text-sm mb-4">Configure who your emails will come from.</p>
+              <div className="space-y-4">
                 <div>
-                    <Label>Company Logo</Label>
-                    <div className="flex items-center gap-4 mt-2">
-                        <Avatar className="w-16 h-16">
-                            <AvatarImage src={logo} />
-                            <AvatarFallback className="text-lg"><Icon name="Image" /></AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <Input 
-                            id="logo-upload" 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden" 
-                            onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                    setLogo(URL.createObjectURL(e.target.files[0]));
-                                }
-                            }} 
-                          />
-                          <Button asChild variant="outline">
-                            <Label htmlFor="logo-upload" className="cursor-pointer">
-                              <Icon name="Upload" className="mr-2 h-4 w-4"/>
-                              Upload Logo
-                            </Label>
-                          </Button>
-                          <p className="text-xs text-muted-foreground mt-1">Recommended: 200x200px, PNG or JPG</p>
-                        </div>
+                  <Label htmlFor="senderName">Sender Name *</Label>
+                  <Input 
+                    id="senderName" 
+                    value={senderName} 
+                    onChange={e => setSenderName(e.target.value)} 
+                    placeholder="Your Company Name" 
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="fromEmail">From Email *</Label>
+                  <Input 
+                    id="fromEmail" 
+                    value={fromEmail} 
+                    onChange={e => setFromEmail(e.target.value)} 
+                    placeholder="hello@yourbrand.com"
+                    className={fromEmail && !validateEmail(fromEmail) ? "border-red-500" : ""}
+                  />
+                  {fromEmail && !validateEmail(fromEmail) && (
+                    <p className="text-sm text-red-500 mt-1">Please enter a valid email address</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Branding Section */}
+            <div>
+              <h3 className="font-semibold text-lg">Branding</h3>
+              <p className="text-muted-foreground text-sm mb-4">Customize your email appearance.</p>
+              <div className="space-y-4">
+                <div>
+                  <Label>Company Logo</Label>
+                  <div className="flex items-center gap-4 mt-2">
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={logo} />
+                      <AvatarFallback className="text-lg"><Icon name="Image" /></AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <Input 
+                        id="logo-upload" 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setLogo(URL.createObjectURL(e.target.files[0]));
+                          }
+                        }} 
+                      />
+                      <Button asChild variant="outline">
+                        <Label htmlFor="logo-upload" className="cursor-pointer">
+                          <Icon name="Upload" className="mr-2 h-4 w-4"/>
+                          Upload Logo
+                        </Label>
+                      </Button>
                     </div>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="accentColor">Brand Color</Label>
@@ -339,29 +320,17 @@ const EmailSetup = () => {
                     value={unsubscribeFooter} 
                     onChange={e => setUnsubscribeFooter(e.target.value)} 
                     placeholder="Your Company Inc.&#10;123 Business Street&#10;City, State 12345&#10;United States"
-                    rows={4}
+                    rows={3}
                   />
                   <p className="text-xs text-muted-foreground mt-1">Required by law. Include your company name and physical address.</p>
                 </div>
               </div>
-               <div className="mt-6">
-                <EmailPreview 
-                    senderName={senderName || "Your Company"}
-                    fromEmail={fromEmail || "hello@yourbrand.com"}
-                    logoUrl={logo}
-                    accentColor={accentColor}
-                    subject="Welcome to our newsletter!"
-                    body="This is a preview of how your emails will look with your custom branding. Your logo, colors, and footer will appear consistently across all your email campaigns."
-                    footer={unsubscribeFooter || "Your Company Inc., 123 Business Street, City, State 12345"}
-                />
-              </div>
             </div>
-        );
-      case 5:
-        return (
+
+            {/* Test Email Section */}
             <div>
-              <h3 className="font-semibold text-lg">Send a Test Email</h3>
-              <p className="text-muted-foreground text-sm mb-4">Send yourself a test email to make sure everything is working correctly before going live.</p>
+              <h3 className="font-semibold text-lg">Test Email</h3>
+              <p className="text-muted-foreground text-sm mb-4">Send a test email to verify everything works.</p>
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="testSubject">Subject Line *</Label>
@@ -378,7 +347,7 @@ const EmailSetup = () => {
                     id="testBody" 
                     value={testBody} 
                     onChange={e => setTestBody(e.target.value)}
-                    rows={6}
+                    rows={4}
                     placeholder="Write your test email content here..."
                   />
                 </div>
@@ -389,7 +358,7 @@ const EmailSetup = () => {
                 >
                   {testEmailSent ? (
                     <>
-                      <Icon name="CheckCircle" className="mr-2 h-4 w-4" />
+                      <Icon name="Check" className="mr-2 h-4 w-4" />
                       Test Email Sent Successfully
                     </>
                   ) : (
@@ -400,49 +369,52 @@ const EmailSetup = () => {
                   )}
                 </Button>
               </div>
-              <div className="mt-6">
-                <EmailPreview 
-                    senderName={senderName}
-                    fromEmail={fromEmail}
-                    logoUrl={logo}
-                    accentColor={accentColor}
-                    subject={testSubject}
-                    body={testBody}
-                    footer={unsubscribeFooter}
-                />
+            </div>
+
+            {/* Email Preview */}
+            <div>
+              <EmailPreview 
+                senderName={senderName || "Your Company"}
+                fromEmail={fromEmail || "hello@yourbrand.com"}
+                logoUrl={logo}
+                accentColor={accentColor}
+                subject={testSubject}
+                body={testBody}
+                footer={unsubscribeFooter || "Your Company Inc., 123 Business Street, City, State 12345"}
+              />
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="text-center py-12">
+            <div className="mb-6">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icon name="Check" className="h-10 w-10 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-3xl text-green-900">Setup Complete!</h3>
+              <p className="text-muted-foreground mt-3 text-lg max-w-md mx-auto">
+                Your email domain is verified and configured. You're ready to start sending professional emails!
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 text-left">
+              <div className="p-4 border rounded-lg">
+                <Icon name="Shield" className="h-8 w-8 text-blue-600 mb-2"/>
+                <h4 className="font-medium">Domain Verified</h4>
+                <p className="text-sm text-muted-foreground">Your DNS records are properly configured</p>
+              </div>
+              <div className="p-4 border rounded-lg">
+                <Icon name="User" className="h-8 w-8 text-green-600 mb-2"/>
+                <h4 className="font-medium">Sender Profile Ready</h4>
+                <p className="text-sm text-muted-foreground">Your from name and email are set up</p>
+              </div>
+              <div className="p-4 border rounded-lg">
+                <Icon name="Palette" className="h-8 w-8 text-purple-600 mb-2"/>
+                <h4 className="font-medium">Branding Applied</h4>
+                <p className="text-sm text-muted-foreground">Your emails will look professional</p>
               </div>
             </div>
-        );
-      case 6:
-        return (
-            <div className="text-center py-12">
-                <div className="mb-6">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Icon name="CheckCircle" className="h-10 w-10 text-green-600" />
-                  </div>
-                  <h3 className="font-semibold text-3xl text-green-900">Setup Complete!</h3>
-                  <p className="text-muted-foreground mt-3 text-lg max-w-md mx-auto">
-                    Your email domain is verified and configured. You're ready to start sending professional emails!
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 text-left">
-                  <div className="p-4 border rounded-lg">
-                    <Icon name="Shield" className="h-8 w-8 text-blue-600 mb-2"/>
-                    <h4 className="font-medium">Domain Verified</h4>
-                    <p className="text-sm text-muted-foreground">Your DNS records are properly configured</p>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <Icon name="User" className="h-8 w-8 text-green-600 mb-2"/>
-                    <h4 className="font-medium">Sender Profile Ready</h4>
-                    <p className="text-sm text-muted-foreground">Your from name and email are set up</p>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <Icon name="Palette" className="h-8 w-8 text-purple-600 mb-2"/>
-                    <h4 className="font-medium">Branding Applied</h4>
-                    <p className="text-sm text-muted-foreground">Your emails will look professional</p>
-                  </div>
-                </div>
-            </div>
+          </div>
         );
       default:
         return null;
